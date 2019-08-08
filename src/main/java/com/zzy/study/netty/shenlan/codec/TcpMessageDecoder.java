@@ -9,13 +9,15 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 
 import java.util.List;
 
-public class TcpMessageDecoder extends ByteToMessageDecoder {
+public abstract class TcpMessageDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        out.add(decode(in));
+        out.add(decode(in, getSecretKey(ctx)));
     }
 
-    public NettyMessage decode(ByteBuf byteBuf) throws Exception {
+    protected abstract byte[] getSecretKey(ChannelHandlerContext ctx);
+
+    public NettyMessage decode(ByteBuf byteBuf, byte[] secretKey) throws Exception {
             int iCode = byteBuf.readInt();
             Header header = new Header();
             if (iCode != header.iCode) {
@@ -34,33 +36,41 @@ public class TcpMessageDecoder extends ByteToMessageDecoder {
             header.dataLength = byteBuf.readShort();
 
             if (header.dataLength > 0) {
-                    byte[] aesData = new byte[header.dataLength];
-                    byteBuf.readBytes(aesData);
-                    byte[] plainData = aesData;
+                byte[] aesData = new byte[header.dataLength];
+                byteBuf.readBytes(aesData);
+
+                ByteBuf inByteBuf = Unpooled.buffer(aesData.length);
+                if(header.command == MessageType.SECRET_KEY.value()){
+                    inByteBuf.writeBytes(aesData);
+                }else{
+                    byte[] plainData = AES.decode(aesData, secretKey);
                     if (plainData == null) {
                         //解密失败
                         throw new Exception("解密失败，需要重新连接服务端");
                     }
-
-                    ByteBuf inByteBuf = Unpooled.buffer(plainData.length);
                     inByteBuf.writeBytes(plainData);
+                }
 
-                    if (header.command == MessageType.LOGIN.value()) {
-                        //登录
-                        byte[] bodyByte1 = new byte[LoginMessage.LoginBody.UserNameSize];
-                        byte[] bodyByte2 = new byte[LoginMessage.LoginBody.AuthenticationSize];
+                if (header.command == MessageType.LOGIN.value()) {
+                    //登录
+                    byte[] bodyByte1 = new byte[LoginMessage.LoginBody.UserNameSize];
+                    byte[] bodyByte2 = new byte[LoginMessage.LoginBody.AuthenticationSize];
 
-                        inByteBuf.readBytes(bodyByte1);
-                        inByteBuf.readBytes(bodyByte2);
+                    inByteBuf.readBytes(bodyByte1);
+                    inByteBuf.readBytes(bodyByte2);
 
-                        byte status = inByteBuf.readByte();
-                        body = new LoginMessage.LoginBody(
-                                ByteUtils.byteArray2String(bodyByte1, NettyMessage.COVER),
-                                ByteUtils.byteArray2String(bodyByte2, NettyMessage.COVER));
-                        ((LoginMessage.LoginBody) body).status = status;
+                    byte status = inByteBuf.readByte();
+                    body = new LoginMessage.LoginBody(
+                            ByteUtils.byteArray2String(bodyByte1, NettyMessage.COVER),
+                            ByteUtils.byteArray2String(bodyByte2, NettyMessage.COVER));
+                    ((LoginMessage.LoginBody) body).status = status;
 
-                        LoginMessage.LoginBody lb = (LoginMessage.LoginBody) body;
-                    }
+                    LoginMessage.LoginBody lb = (LoginMessage.LoginBody) body;
+                }else if(header.command == MessageType.TASK_START.value()){
+                    body = StartTaskMessage.TaskBody.fromByteBuf(inByteBuf);
+                }else if(header.command == MessageType.SECRET_KEY.value()){
+                    body = SecretKeyMessage.SecretKeyBody.fromByteBuf(inByteBuf,header.dataLength);
+                }
 
             }
             NettyMessage message = new NettyMessage(header, body);

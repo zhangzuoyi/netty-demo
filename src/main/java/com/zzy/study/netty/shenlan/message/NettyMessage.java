@@ -1,6 +1,7 @@
 package com.zzy.study.netty.shenlan.message;
 
 
+import com.zzy.study.netty.shenlan.codec.AES;
 import io.netty.buffer.ByteBuf;
 
 public class NettyMessage {
@@ -30,8 +31,16 @@ public class NettyMessage {
 		return Header.LENGTH + (body == null?0:body.length());
 	}
 
-	public void encode(ByteBuf out){
+	public void encode(ByteBuf out, byte[] secretKey){
 		header.encode(out);
-		body.encode(out);
+		if(body != null){
+			byte[] plainData=body.toByteArray();
+			if(header.command == MessageType.SECRET_KEY.value()){
+				out.writeBytes(plainData);
+			}else{
+				byte[] encodeData= AES.encode(plainData, secretKey);
+				out.writeBytes(encodeData);
+			}
+		}
 	}
 }

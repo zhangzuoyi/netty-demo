@@ -1,5 +1,8 @@
 package com.zzy.study.netty.shenlan.server;
 
+import com.zzy.study.netty.shenlan.codec.NettyMessageEncoder;
+import com.zzy.study.netty.shenlan.codec.ServerDecoder;
+import com.zzy.study.netty.shenlan.codec.ServerEncoder;
 import com.zzy.study.netty.shenlan.codec.TcpMessageDecoder;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -22,8 +25,9 @@ public class MyServerInitializer extends ChannelInitializer<SocketChannel>{
 //        pipeline.addLast(new StringDecoder(CharsetUtil.UTF_8));
         //字符串编码
         pipeline.addLast(new StringEncoder(CharsetUtil.UTF_8));
+        pipeline.addLast(new ServerEncoder());
 
-        pipeline.addLast(new TcpMessageDecoder());
+        pipeline.addLast(new ServerDecoder());
         //自己定义的处理器
         pipeline.addLast(new MyServerHandler());
     }

@@ -5,9 +5,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 
-public class NettyMessageEncoder extends MessageToByteEncoder<NettyMessage> {
+public abstract class NettyMessageEncoder extends MessageToByteEncoder<NettyMessage> {
     @Override
     protected void encode(ChannelHandlerContext ctx, NettyMessage msg, ByteBuf out) throws Exception {
-        msg.encode(out);
+        msg.encode(out, getSecretKey(ctx));
     }
+
+    protected abstract byte[] getSecretKey(ChannelHandlerContext ctx);
 }

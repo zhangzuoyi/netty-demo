@@ -1,1 +1,9 @@
 # netty-demo
+- 服务端入口HeartBeatServer，客户端入口ClientMessageServer
+- 实现功能：
+   1. DH密钥协商
+   2. 客户端登录
+   3. 心跳机制
+   4. 断开自动重连
+   5. 消息体使用AES加密
+   6. 客户端使用ClientMessageServer的阻塞队列来发送消息

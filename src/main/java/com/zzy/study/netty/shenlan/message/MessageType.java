@@ -4,10 +4,22 @@ import java.util.HashMap;
 
 public enum MessageType {
 
+	/**
+	 * 密钥协商
+	 */
+	SECRET_KEY((short)0x1202),
     /**
-     * 3登录
+     * 登录
      */
-    LOGIN((short)0x1101);
+    LOGIN((short)0x1101),
+	/**
+	 * 心跳
+	 */
+	HEARTBEAT((short)0x1201),
+	/**
+	 * 开始任务
+	 */
+	TASK_START((short)0x2205);
 
 	private short value;
 
