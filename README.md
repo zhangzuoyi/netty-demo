@@ -7,3 +7,4 @@
    4. 断开自动重连
    5. 消息体使用AES加密
    6. 客户端使用ClientMessageServer的阻塞队列来发送消息
+- 由于DH算法的原因，服务端与客户端启动都要加上参数：-Djdk.crypto.KeyAgreement.legacyKDF=true
